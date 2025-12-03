@@ -9,10 +9,10 @@ pipeline {
         maven '3.9.11'
     }
 
-    environment {
-        NEXUS_URL = 'http://nexus:8081/repository/maven-releases/' // Nexus URL from Jenkins container
-        NEXUS_CREDENTIALS = 'nexus-creds' // Jenkins credentials ID for Nexus
-    }
+	environment {
+		NEXUS_URL = 'http://nexus:8081/repository/maven-snapshots/' // snapshot repo
+		NEXUS_CREDENTIALS = 'nexus-creds'
+	}
 
     stages {
 
