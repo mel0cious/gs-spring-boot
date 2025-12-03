@@ -10,9 +10,8 @@ pipeline {
     }
 
     environment {
-        // Nexus repo info
-        NEXUS_URL = "http://localhost:8081/repository/maven-releases/"
-        NEXUS_CREDENTIALS = "nexus-creds"
+        NEXUS_URL = 'http://localhost:8081/repository/maven-releases/' // replace with your Nexus URL
+        NEXUS_CREDENTIALS = 'nexus-deploy' // Jenkins credentials ID for Nexus
     }
 
     stages {
@@ -40,20 +39,27 @@ pipeline {
             }
         }
 
+        stage('Archive Artifacts') {
+            steps {
+                archiveArtifacts artifacts: 'complete/target/*.jar', fingerprint: true
+            }
+        }
+
         stage('Upload to Nexus') {
             steps {
                 dir('complete') {
-                    withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}",
-                                                     usernameVariable: 'NEXUS_USER',
-                                                     passwordVariable: 'NEXUS_PASS')]) {
-
+                    withCredentials([usernamePassword(
+                        credentialsId: "${NEXUS_CREDENTIALS}",
+                        usernameVariable: 'NEXUS_USER',
+                        passwordVariable: 'NEXUS_PASS'
+                    )]) {
                         sh """
                         mvn deploy:deploy-file \
                             -Durl=${NEXUS_URL} \
                             -DrepositoryId=nexus \
-                            -Dfile=target/demo-0.0.1-SNAPSHOT.jar \
+                            -Dfile=target/spring-boot-complete-0.0.1-SNAPSHOT.jar \
                             -DgroupId=com.example \
-                            -DartifactId=demo \
+                            -DartifactId=spring-boot-complete \
                             -Dversion=0.0.1-SNAPSHOT \
                             -Dpackaging=jar \
                             -DgeneratePom=true \
@@ -65,11 +71,6 @@ pipeline {
             }
         }
 
-        stage('Archive Artifacts') {
-            steps {
-                archiveArtifacts artifacts: 'complete/target/*.jar', fingerprint: true
-            }
-        }
     }
 
     post {
@@ -77,10 +78,10 @@ pipeline {
             echo 'Pipeline finished.'
         }
         success {
-            echo 'Build successful!'
+            echo 'Build and deployment successful!'
         }
         failure {
-            echo 'Build failed!'
+            echo 'Build or deployment failed!'
         }
     }
 }
