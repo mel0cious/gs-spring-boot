@@ -10,8 +10,8 @@ pipeline {
     }
 
     environment {
-        NEXUS_URL = 'http://localhost:8081/repository/maven-releases/' // replace with your Nexus URL
-        NEXUS_CREDENTIALS = 'nexus-deploy' // Jenkins credentials ID for Nexus
+        NEXUS_URL = 'http://localhost:8081/repository/maven-releases/'
+        NEXUS_CREDENTIALS = 'nexus-creds'
     }
 
     stages {
@@ -53,19 +53,29 @@ pipeline {
                         usernameVariable: 'NEXUS_USER',
                         passwordVariable: 'NEXUS_PASS'
                     )]) {
-                        sh """
-                        mvn deploy:deploy-file \
-                            -Durl=${NEXUS_URL} \
-                            -DrepositoryId=nexus \
-                            -Dfile=target/spring-boot-complete-0.0.1-SNAPSHOT.jar \
-                            -DgroupId=com.example \
-                            -DartifactId=spring-boot-complete \
-                            -Dversion=0.0.1-SNAPSHOT \
-                            -Dpackaging=jar \
-                            -DgeneratePom=true \
-                            -Dusername=$NEXUS_USER \
-                            -Dpassword=$NEXUS_PASS
-                        """
+                        script {
+                            // Find the generated JAR dynamically
+                            def jarFile = sh(
+                                script: "ls target/*.jar | grep -v 'original' | head -n 1",
+                                returnStdout: true
+                            ).trim()
+
+                            echo "Deploying JAR: ${jarFile}"
+
+                            sh """
+                            mvn deploy:deploy-file \
+                                -Durl=${NEXUS_URL} \
+                                -DrepositoryId=nexus \
+                                -Dfile=${jarFile} \
+                                -DgroupId=com.example \
+                                -DartifactId=spring-boot-complete \
+                                -Dversion=0.0.1-SNAPSHOT \
+                                -Dpackaging=jar \
+                                -DgeneratePom=true \
+                                -Dusername=$NEXUS_USER \
+                                -Dpassword=$NEXUS_PASS
+                            """
+                        }
                     }
                 }
             }
