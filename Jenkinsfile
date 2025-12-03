@@ -10,6 +10,7 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout Source Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/mel0cious/gs-spring-boot.git'
@@ -18,21 +19,24 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh 'git --version'
                 sh 'mvn --version'
-                sh 'cd complete && mvn clean test' // Example for a Maven project
+                dir('complete') {
+                    sh 'mvn clean test'
+                }
             }
         }
 
         stage('Build and Package') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                dir('complete') {
+                    sh 'mvn clean package -DskipTests'
+                }
             }
         }
 
         stage('Archive Artifacts') {
             steps {
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                archiveArtifacts artifacts: 'complete/target/*.jar', fingerprint: true
             }
         }
     }
