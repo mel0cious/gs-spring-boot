@@ -9,6 +9,12 @@ pipeline {
         maven '3.9.11'
     }
 
+    environment {
+        // Nexus repo info
+        NEXUS_URL = "http://localhost:8081/repository/maven-releases/"
+        NEXUS_CREDENTIALS = "nexus-creds"
+    }
+
     stages {
 
         stage('Checkout Source Code') {
@@ -30,6 +36,31 @@ pipeline {
             steps {
                 dir('complete') {
                     sh 'mvn clean package -DskipTests'
+                }
+            }
+        }
+
+        stage('Upload to Nexus') {
+            steps {
+                dir('complete') {
+                    withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}",
+                                                     usernameVariable: 'NEXUS_USER',
+                                                     passwordVariable: 'NEXUS_PASS')]) {
+
+                        sh """
+                        mvn deploy:deploy-file \
+                            -Durl=${NEXUS_URL} \
+                            -DrepositoryId=nexus \
+                            -Dfile=target/demo-0.0.1-SNAPSHOT.jar \
+                            -DgroupId=com.example \
+                            -DartifactId=demo \
+                            -Dversion=0.0.1-SNAPSHOT \
+                            -Dpackaging=jar \
+                            -DgeneratePom=true \
+                            -Dusername=$NEXUS_USER \
+                            -Dpassword=$NEXUS_PASS
+                        """
+                    }
                 }
             }
         }
