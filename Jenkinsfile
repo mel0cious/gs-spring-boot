@@ -58,6 +58,23 @@ pipeline {
                             def jarFile = sh(script: "ls target/*.jar | grep -v original | head -n 1", returnStdout: true).trim()
                             echo "Deploying JAR: ${jarFile}"
 
+                            // Generate temporary settings.xml with credentials
+                            writeFile file: 'temp-settings.xml', text: """
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                              https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <servers>
+    <server>
+      <id>nexus</id>
+      <username>${NEXUS_USER}</username>
+      <password>${NEXUS_PASS}</password>
+    </server>
+  </servers>
+</settings>
+"""
+
+                            // Deploy using Maven with temp settings.xml
                             sh """
                             mvn deploy:deploy-file -e -X \
                                 -Durl=${NEXUS_URL} \
@@ -68,8 +85,7 @@ pipeline {
                                 -Dversion=0.0.1-SNAPSHOT \
                                 -Dpackaging=jar \
                                 -DgeneratePom=true \
-                                -Dusername=$NEXUS_USER \
-                                -Dpassword=$NEXUS_PASS
+                                -s temp-settings.xml
                             """
                         }
                     }
