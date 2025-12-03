@@ -10,8 +10,8 @@ pipeline {
     }
 
     environment {
-        NEXUS_URL = 'http://nexus:8081/repository/maven-releases/' // Nexus container name 'nexus'
-        NEXUS_CREDENTIALS = 'nexus-creds'
+        NEXUS_URL = 'http://nexus:8081/repository/maven-releases/' // Nexus URL from Jenkins container
+        NEXUS_CREDENTIALS = 'nexus-creds' // Jenkins credentials ID for Nexus
     }
 
     stages {
@@ -26,7 +26,7 @@ pipeline {
             steps {
                 sh 'mvn --version'
                 dir('complete') {
-                    sh 'mvn clean test'
+                    sh 'mvn clean test -e -X' // Full error and debug output
                 }
             }
         }
@@ -34,8 +34,7 @@ pipeline {
         stage('Build and Package') {
             steps {
                 dir('complete') {
-                    sh 'mvn clean package -DskipTests'
-                    sh 'ls -l target/' // verify the JAR exists
+                    sh 'mvn clean package -DskipTests -e -X'
                 }
             }
         }
@@ -55,11 +54,12 @@ pipeline {
                         passwordVariable: 'NEXUS_PASS'
                     )]) {
                         script {
+                            // Find the built JAR dynamically
                             def jarFile = sh(script: "ls target/*.jar | grep -v original | head -n 1", returnStdout: true).trim()
                             echo "Deploying JAR: ${jarFile}"
 
                             sh """
-                            mvn deploy:deploy-file \
+                            mvn deploy:deploy-file -e -X \
                                 -Durl=${NEXUS_URL} \
                                 -DrepositoryId=nexus \
                                 -Dfile=${jarFile} \
