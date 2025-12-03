@@ -10,7 +10,8 @@ pipeline {
     }
 
     environment {
-        NEXUS_URL = 'http://localhost:8081/repository/maven-releases/'
+        // Use the Nexus container hostname, not localhost
+        NEXUS_URL = 'http://nexus:8081/repository/maven-releases/'
         NEXUS_CREDENTIALS = 'nexus-creds'
     }
 
@@ -54,17 +55,15 @@ pipeline {
                         passwordVariable: 'NEXUS_PASS'
                     )]) {
                         script {
-                            // Find the generated JAR dynamically
                             def jarFile = sh(
-                                script: "ls target/*.jar | grep -v 'original' | head -n 1",
+                                script: "ls target/*.jar | grep -v original | head -n 1",
                                 returnStdout: true
                             ).trim()
-
                             echo "Deploying JAR: ${jarFile}"
 
                             sh """
                             mvn deploy:deploy-file \
-                                -Durl=${NEXUS_URL} \
+                                -Durl=$NEXUS_URL \
                                 -DrepositoryId=nexus \
                                 -Dfile=${jarFile} \
                                 -DgroupId=com.example \
