@@ -10,8 +10,7 @@ pipeline {
     }
 
     environment {
-        // Use the Nexus container hostname, not localhost
-        NEXUS_URL = 'http://nexus:8081/repository/maven-releases/'
+        NEXUS_URL = 'http://nexus:8081/repository/maven-releases/' // Nexus container name 'nexus'
         NEXUS_CREDENTIALS = 'nexus-creds'
     }
 
@@ -36,6 +35,7 @@ pipeline {
             steps {
                 dir('complete') {
                     sh 'mvn clean package -DskipTests'
+                    sh 'ls -l target/' // verify the JAR exists
                 }
             }
         }
@@ -55,15 +55,12 @@ pipeline {
                         passwordVariable: 'NEXUS_PASS'
                     )]) {
                         script {
-                            def jarFile = sh(
-                                script: "ls target/*.jar | grep -v original | head -n 1",
-                                returnStdout: true
-                            ).trim()
+                            def jarFile = sh(script: "ls target/*.jar | grep -v original | head -n 1", returnStdout: true).trim()
                             echo "Deploying JAR: ${jarFile}"
 
                             sh """
                             mvn deploy:deploy-file \
-                                -Durl=$NEXUS_URL \
+                                -Durl=${NEXUS_URL} \
                                 -DrepositoryId=nexus \
                                 -Dfile=${jarFile} \
                                 -DgroupId=com.example \
