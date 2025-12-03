@@ -20,7 +20,7 @@ pipeline {
             steps {
                 sh 'git --version'
                 sh 'mvn --version'
-                sh 'mvn clean test' // Example for a Maven project
+                sh 'cd complete && mvn clean test' // Example for a Maven project
             }
         }
 
